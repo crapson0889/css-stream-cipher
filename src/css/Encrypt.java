@@ -17,6 +17,7 @@ public class Encrypt {
            
     int bits25=0;
     int bits17=0;
+    int carry = 0;
     
     Encrypt(String sourceFile, String key, String destinationFile)
     {
@@ -25,6 +26,44 @@ public class Encrypt {
         //Break up the key
         int bitCount = 0;
         
+        getKeys(key);
+        
+        //Read in the file to encrypt
+        try{
+            // Open the file that is the first 
+            // command line parameter
+            FileInputStream fstream = new FileInputStream(sourceFile);
+            // Get the object of DataInputStream
+            DataInputStream in = new DataInputStream(fstream);
+            BufferedReader br = new BufferedReader(new InputStreamReader(in));
+            
+            //Current character
+            byte b;
+            //Current index for encryption
+            int keyIndex = 0;
+            int count = 0;
+            //Keys
+            int finalKey = 0;
+            
+            //Read File character By character
+            while (in.available() != 0)   {
+                b = in.readByte();
+                finalKey = bit8adder(LFSR17(), LFSR25());
+                //System.out.print(b + " ");
+                count++;
+            }
+            System.out.println("\n\n"+count);
+            //Close the input stream
+            in.close();
+        }
+        catch (Exception e){//Catch exception if any
+            System.err.println("Error: " + e);
+            System.err.println("Error: " + e.getMessage());
+        }
+    }
+    
+    void getKeys(String key)
+    {
         for(int i = 0; i < key.length(); i ++)
         {
             System.out.println(key.charAt(i)+" "+Integer.toBinaryString((byte)key.charAt(i)));
@@ -51,40 +90,11 @@ public class Encrypt {
         System.out.println(bitString(bits17));
         
         System.out.println();
-        
-        int i = LFSR17(bits17);
-        
-        //Read in the file to encrypt
-        try{
-            // Open the file that is the first 
-            // command line parameter
-            FileInputStream fstream = new FileInputStream(sourceFile);
-            // Get the object of DataInputStream
-            DataInputStream in = new DataInputStream(fstream);
-            BufferedReader br = new BufferedReader(new InputStreamReader(in));
-            
-            //Current character
-            byte b;
-            //Current index for encryption
-            int keyIndex = 0;
-            int count = 0;
-            
-            //Read File character By character
-            while (in.available() != 0)   {
-                b = in.readByte();
-                System.out.print(b + " ");
-                count++;
-            }
-            System.out.println("\n\n"+count);
-            //Close the input stream
-            in.close();
-        }
-        catch (Exception e){//Catch exception if any
-            System.err.println("Error: " + e);
-            System.err.println("Error: " + e.getMessage());
-        }
     }
     
+    /*
+     * This is old code for making sure my LFSR function worked...
+     * */
     int LFSR(int bits)
     {
         System.out.println("LFSR:");
@@ -107,40 +117,88 @@ public class Encrypt {
         return 0;
     }
     
-    int LFSR17(int bits)
+    private int LFSR17()
     {
-        System.out.println("LFSR:");
-        System.out.println(bitString(bits) + "\n");
+        //System.out.println("LFSR:");
+        //System.out.println(bitString(bits17) + "\n");
         
-        int bitMask17 = 0x100;
-        int bitMask2 = 0x02;
+        int bitMask17 = 0x01 << 16;
+        int bitMask2 = 0x01 << 1;
         
-        int carryKey = 0;
+        int keyStreamByte = 0;
         
         for(int i = 0; i < 8; i++)
         {
-            int lfsr = (((bits & bitMask17) >> 16) ^ ((bits & bitMask2) >> 1) & 1);
-            bits = bits << 1 | lfsr;
-            if(bits > 131072)
+            int lfsr = (((bits17 & bitMask17) >> 16) ^ ((bits17 & bitMask2) >> 1) & 1);
+            bits17 = bits17 << 1 | lfsr;
+            if(bits17 > 131072)
             {
-                bits = bits - 131072;
-                carryKey = carryKey << 1 | 0x01;
+                bits17 = bits17 - 131072;
+                keyStreamByte = keyStreamByte << 1 | 0x01;
             }
             else
             {
-                carryKey = carryKey << 1 | 0x00;
+                keyStreamByte = keyStreamByte << 1 | 0x00;
             }
-            System.out.println(bitString(bits));
-            
-            System.out.println(((bits & bitMask17) >> 16));
+            //System.out.println(bitString(bits17));
         }
         
-        System.out.println("\n"+bitString(carryKey)+"\n");
+        //System.out.println("\n"+bitString(keyStreamByte)+"\n");
         
-        return 0;
+        return keyStreamByte;
     }
     
-    String bitString(int bits)
+    private int LFSR25()
+    {
+        //System.out.println("LFSR:");
+        //System.out.println(bitString(bits25) + "\n");
+        
+        int bitMask25 = 0x01 << 24;
+        int bitMask21 = 0x01 << 20;
+        int bitMask20 = 0x01 << 19;
+        int bitMask10 = 0x01 << 9;
+        
+        int keyStreamByte = 0;
+        
+        for(int i = 0; i < 8; i++)
+        {
+            int lfsr = (((bits25 & bitMask25) >> 24) ^ ((bits25 & bitMask21) >> 20) ^ ((bits25 & bitMask20) >> 19) ^ ((bits25 & bitMask10) >> 9) & 1);
+            bits25 = bits25 << 1 | lfsr;
+            if(bits25 > 33554432)
+            {
+                bits25 = bits25 - 33554432;
+                keyStreamByte = keyStreamByte << 1 | 0x01;
+            }
+            else
+            {
+                keyStreamByte = keyStreamByte << 1 | 0x00;
+            }
+            //System.out.println(bitString(bits25));
+        }
+        
+        //System.out.println("\n"+bitString(keyStreamByte)+"\n");
+        
+        return keyStreamByte;
+    }
+    
+    private int bit8adder(int key17, int key25)
+    {
+        System.out.println("bit8adder: ");
+        int sum = key17 + key25 + carry;
+        System.out.println(key17 + " + " + key25 + " = " + sum);
+        if(sum > 256)
+        {
+            carry = 1;
+            System.out.println("carry!");
+            return sum % 256;
+        }
+        else
+        {
+            return sum;
+        }
+    }
+    
+    static String bitString(int bits)
     {
         if(Integer.toBinaryString(bits).length() < 10)
         {

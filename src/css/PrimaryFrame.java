@@ -42,7 +42,7 @@ public class PrimaryFrame extends javax.swing.JFrame {
 
         jLabel1.setText("File to Encrypt");
 
-        jTextField1.setText("/Users/crapson/Documents/plainText.txt");
+        jTextField1.setText("testFiles/plainText.txt");
 
         jButton1.setText("Encrypt");
         jButton1.addActionListener(new java.awt.event.ActionListener() {
