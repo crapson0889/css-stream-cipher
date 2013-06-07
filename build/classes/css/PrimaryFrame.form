@@ -134,6 +134,9 @@
           </Properties>
         </Component>
         <Component class="javax.swing.JTextField" name="jTextField3">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="testFiles/encryptedText.txt"/>
+          </Properties>
         </Component>
       </SubComponents>
     </Container>

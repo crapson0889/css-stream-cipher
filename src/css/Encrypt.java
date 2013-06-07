@@ -7,6 +7,7 @@ package css;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.InputStreamReader;
 
 /**
@@ -37,6 +38,8 @@ public class Encrypt {
             DataInputStream in = new DataInputStream(fstream);
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
             
+            FileWriter out = new FileWriter(destinationFile);
+            
             //Current character
             byte b;
             //Current index for encryption
@@ -44,17 +47,44 @@ public class Encrypt {
             int count = 0;
             //Keys
             int finalKey = 0;
+            int encryptionResult;
+            byte encryptedByte;
+            int off  = 0;
             
             //Read File character By character
             while (in.available() != 0)   {
                 b = in.readByte();
+                //System.out.print((byte)b+" ");
                 finalKey = bit8adder(LFSR17(), LFSR25());
-                //System.out.print(b + " ");
+                encryptionResult = b ^ finalKey;
+                //System.out.print((byte)encryptionResult+" ");
+                System.out.println(Integer.toHexString(encryptionResult) + " " + encryptionResult);
+                if(encryptionResult > 128)
+                {
+                    System.out.println(Integer.toBinaryString(encryptionResult));
+                    encryptionResult = (byte)encryptionResult;
+                    System.out.println(Integer.toBinaryString(encryptionResult));
+                    int bitMask = 0x000000FF;
+                    encryptionResult = encryptionResult & bitMask;
+                    /*System.out.println(Integer.toBinaryString(encryptionResult));
+                    //encryptedByte = (byte)(encryptedByte << 24);
+                    encryptedByte = (byte) (encryptionResult & bitMask);
+                    System.out.println(Integer.toBinaryString(encryptedByte));*/
+                    off++;
+                }
+                else
+                {
+                    encryptedByte = (byte)encryptionResult;
+                }
+                //System.out.println(Integer.toHexString(encryptedByte) + " " + (byte)encryptedByte+"\n");
+                out.write((int)encryptionResult);
+                
                 count++;
             }
-            System.out.println("\n\n"+count);
+            System.out.println("\n\n"+count+" "+off);
             //Close the input stream
             in.close();
+            out.close();
         }
         catch (Exception e){//Catch exception if any
             System.err.println("Error: " + e);
@@ -183,13 +213,12 @@ public class Encrypt {
     
     private int bit8adder(int key17, int key25)
     {
-        System.out.println("bit8adder: ");
+        //System.out.println("bit8adder: ");
         int sum = key17 + key25 + carry;
-        System.out.println(key17 + " + " + key25 + " = " + sum);
+        //System.out.println(key17 + " + " + key25 + " = " + sum);
         if(sum > 256)
         {
             carry = 1;
-            System.out.println("carry!");
             return sum % 256;
         }
         else

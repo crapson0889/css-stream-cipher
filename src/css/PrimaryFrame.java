@@ -57,6 +57,8 @@ public class PrimaryFrame extends javax.swing.JFrame {
 
         jLabel3.setText("Destination of Encrypted File");
 
+        jTextField3.setText("testFiles/encryptedText.txt");
+
         org.jdesktop.layout.GroupLayout jPanel1Layout = new org.jdesktop.layout.GroupLayout(jPanel1);
         jPanel1.setLayout(jPanel1Layout);
         jPanel1Layout.setHorizontalGroup(
