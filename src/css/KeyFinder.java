@@ -1,49 +1,43 @@
 /*
- * This file is used to encrypt and decrypt the files. With CSS the process to 
- * encrypt and decrypt is the same for both.
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
  */
 package css;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 
 /**
  *
  * @author crapson
  */
-public class Encrypt {
-           
+public class KeyFinder {
+    
     int bits25=0;
     int bits17=0;
     int carry = 0;
     
-    String sourceFile;
-    String key;
-    String destinationFile;
-    
-    NotificationFrame nf = new NotificationFrame();
-    
-    Encrypt(String sourceFile, String key, String destinationFile)
+    KeyFinder(String sourceFile)
     {
-        this.sourceFile = sourceFile;
-        this.key = key;
-        this.destinationFile = destinationFile;
+        System.out.println("File: " + sourceFile);
+        
+        String extension = sourceFile.substring(sourceFile.lastIndexOf(".") + 1);
+        
+        System.out.println("File extension: " + extension);
+        
+        byte[] header = getHeader(extension);
+        
+        System.out.println("File header to search for: " + byteArrayString(header));
+        
+        getKey(sourceFile, header);
     }
     
-    void encryptFile()
+    private byte[] getKey(String sourceFile, byte[] header)
     {
-        long startTime = System.nanoTime();
-        System.out.println(sourceFile);
-        System.out.println(destinationFile + "\n");
+        byte[] key = null;
         
-        //Break up the key into a 17 bit key, and  a 25 bit key
-        getKeys(key);
-        
-        //Read in the file to encrypt
         try{
             // Open the file that is the first 
             // command line parameter
@@ -52,108 +46,85 @@ public class Encrypt {
             DataInputStream in = new DataInputStream(fstream);
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
             
-            OutputStream out = new FileOutputStream(destinationFile);
-            
-            //Current byte
+            byte[] decryptedHeader = new byte[header.length];
             byte b;
-            //Current index for encryption
-            int keyIndex = 0;
-            int count = 0;
-            //Keys
             int finalKey = 0;
-            int encryptionResult;
             
+            generateKeys((int)1);
             //Read File character By character
-            while (in.available() != 0)   {
-                b = in.readByte();
-                finalKey = bit8adder(LFSR17(), LFSR25());
-                encryptionResult = b ^ finalKey;
-                //System.out.println(bitString(encryptionResult) + " " + encryptionResult);
-                
-                out.write((int)encryptionResult);
-                
-                count++;
+            for (int i = 0; i < header.length; i++)   {
+                if(in.available() != 0)
+                {
+                    b = in.readByte();
+                    finalKey = bit8adder(LFSR17(), LFSR25());
+                    decryptedHeader[i] = (byte) (b ^ finalKey);
+                }
             }
-            //System.out.println("\n"+count);
-            //Close the input stream
-            in.close();
-            out.close();
-            long endTime = System.nanoTime();
-            
-            //Get statistics of the run to display in NotificationFrame
-            String notification = "Completed\nScrambled " + sourceFile + " to " + destinationFile+"\n";
-            notification = notification + "Key used: " + key + "\n";
-            //Reset bits because they were changed throughout the encryption process
-            bits17 = 0;
-            bits25 = 0;
-            getKeys(key);
-            notification = notification + "25 bit key: " + bitString(bits25) + "\n";
-            notification = notification + "17 bit key: " + bitString(bits17) + "\n";
-            notification = notification + "File size: " + count + " bytes\n";
-            notification = notification + "Execution time: " + ((endTime - startTime)/ 1000000000.0) + " seconds\n";
-            
-            nf.setNotification(notification);
-            nf.setTitle("Notification");
+            System.out.println(byteArrayString(decryptedHeader));
+
         }
         catch (Exception e){//Catch exception if any
             System.err.println("Error: " + e);
             System.err.println("Error: " + e.getMessage());
         }
+        
+        return key;
     }
     
-    void getKeys(String key)
+    private byte[] getHeader(String extension)
     {
-        for(int i = 0; i < key.length(); i ++)
+        byte[] header = null;
+        
+        if(extension.equals("txt"))
         {
-            //System.out.println(key.charAt(i)+" "+Integer.toBinaryString((byte)key.charAt(i)));
         }
+        else if(extension.equals("png"))
+        {
+            header = hexStringToByteArray("89504E470D0A1A0A");
+        }
+        
+        return header;
+    }
+    
+    private static String byteArrayString(byte[] b)
+    {
+        String byteString = "";
+        
+        for(int i = 0; i < b.length; i++)
+        {
+            byteString += String.format("%2s",Integer.toHexString(b[i] & 0xFF)).replace(' ','0');
+        }
+        
+        return byteString;
+    }
+    
+    private static byte[] hexStringToByteArray(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                                 + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
+    }
+    
+    //Methods from encryption process used to find keys
+    //THIS NEEDS TO BE CHANGED...
+    void generateKeys(int key)
+    {
         
         int bitMaskAll = 0xFF;
         
-        for(int i = 0; i < key.length(); i ++)
-        {
-            if(i < 3)
-            {
-                bits25 = bits25<< 8 | (key.charAt(i) & bitMaskAll);
-            }
-            if(i >= 3)
-            {
-                bits17 = bits17 << 8 | (key.charAt(i) & bitMaskAll);
-            }
-        }
+        bits25 = (int) (key % Math.pow(2, 25));
+        bits17 = key >> 25;
         
         bits25 = bits25 << 1 | 0x01;
         bits17 = bits17 << 1 | 0x01;
         
-        //System.out.println(bitString(bits25));
-        //System.out.println(bitString(bits17));
+        System.out.println("25 bit key: " + bitString(bits25));
+        System.out.println("17 bit key: " + bitString(bits17));
         
-        //System.out.println();
-    }
-    
-    /*
-     * This is old code for making sure my LFSR function worked...
-     * */
-    int LFSR(int bits)
-    {
-        System.out.println("LFSR:");
-        System.out.println(bitString(bits));
-        
-        int bitMask4 = 0x08;
-        int bitMask3 = 0x04;
-        
-        for(int i = 0; i < 8; i++)
-        {
-            int lfsr = (((bits & bitMask4) >> 3) ^ ((bits & bitMask3) >> 2) & 1);
-            bits = bits << 1 | lfsr;
-            if(bits > 16)
-            {
-                bits = bits - 16;
-            }
-            System.out.println(bitString(bits));
-        }
-        
-        return 0;
+        System.out.println();
     }
     
     private int LFSR17()
