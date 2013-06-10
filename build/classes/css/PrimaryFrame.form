@@ -45,7 +45,7 @@
       <Properties>
         <Property name="border" type="javax.swing.border.Border" editor="org.netbeans.modules.form.editors2.BorderEditor">
           <Border info="org.netbeans.modules.form.compat2.border.TitledBorderInfo">
-            <TitledBorder title="Encrypt"/>
+            <TitledBorder title="Encrypt / Decrypt"/>
           </Border>
         </Property>
       </Properties>
@@ -102,7 +102,7 @@
       <SubComponents>
         <Component class="javax.swing.JLabel" name="jLabel1">
           <Properties>
-            <Property name="text" type="java.lang.String" value="File to Encrypt"/>
+            <Property name="text" type="java.lang.String" value="File to Encrypt/Decrypt"/>
           </Properties>
         </Component>
         <Component class="javax.swing.JTextField" name="jTextField1">
@@ -130,7 +130,7 @@
         </Component>
         <Component class="javax.swing.JLabel" name="jLabel3">
           <Properties>
-            <Property name="text" type="java.lang.String" value="Destination of Encrypted File"/>
+            <Property name="text" type="java.lang.String" value="Destination File"/>
           </Properties>
         </Component>
         <Component class="javax.swing.JTextField" name="jTextField3">

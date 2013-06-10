@@ -38,9 +38,9 @@ public class PrimaryFrame extends javax.swing.JFrame {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
 
-        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Encrypt"));
+        jPanel1.setBorder(javax.swing.BorderFactory.createTitledBorder("Encrypt / Decrypt"));
 
-        jLabel1.setText("File to Encrypt");
+        jLabel1.setText("File to Encrypt/Decrypt");
 
         jTextField1.setText("testFiles/plainText.txt");
 
@@ -55,7 +55,7 @@ public class PrimaryFrame extends javax.swing.JFrame {
 
         jTextField2.setText("TESTS");
 
-        jLabel3.setText("Destination of Encrypted File");
+        jLabel3.setText("Destination File");
 
         jTextField3.setText("testFiles/encryptedText.txt");
 

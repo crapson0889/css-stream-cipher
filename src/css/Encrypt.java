@@ -1,14 +1,15 @@
 /*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
+ * This file is used to encrypt and decrypt the files. With CSS the process to 
+ * encrypt and decrypt is the same for both.
  */
 package css;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
-import java.io.FileWriter;
+import java.io.FileOutputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 
 /**
  *
@@ -24,9 +25,7 @@ public class Encrypt {
     {
         System.out.println(sourceFile);
         
-        //Break up the key
-        int bitCount = 0;
-        
+        //Break up the key into a 17 bit key, and  a 25 bit key
         getKeys(key);
         
         //Read in the file to encrypt
@@ -38,9 +37,9 @@ public class Encrypt {
             DataInputStream in = new DataInputStream(fstream);
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
             
-            FileWriter out = new FileWriter(destinationFile);
+            OutputStream out = new FileOutputStream(destinationFile);
             
-            //Current character
+            //Current byte
             byte b;
             //Current index for encryption
             int keyIndex = 0;
@@ -48,8 +47,6 @@ public class Encrypt {
             //Keys
             int finalKey = 0;
             int encryptionResult;
-            byte encryptedByte;
-            int off  = 0;
             
             //Read File character By character
             while (in.available() != 0)   {
@@ -58,30 +55,13 @@ public class Encrypt {
                 finalKey = bit8adder(LFSR17(), LFSR25());
                 encryptionResult = b ^ finalKey;
                 //System.out.print((byte)encryptionResult+" ");
-                System.out.println(Integer.toHexString(encryptionResult) + " " + encryptionResult);
-                if(encryptionResult > 128)
-                {
-                    System.out.println(Integer.toBinaryString(encryptionResult));
-                    encryptionResult = (byte)encryptionResult;
-                    System.out.println(Integer.toBinaryString(encryptionResult));
-                    int bitMask = 0x000000FF;
-                    encryptionResult = encryptionResult & bitMask;
-                    /*System.out.println(Integer.toBinaryString(encryptionResult));
-                    //encryptedByte = (byte)(encryptedByte << 24);
-                    encryptedByte = (byte) (encryptionResult & bitMask);
-                    System.out.println(Integer.toBinaryString(encryptedByte));*/
-                    off++;
-                }
-                else
-                {
-                    encryptedByte = (byte)encryptionResult;
-                }
-                //System.out.println(Integer.toHexString(encryptedByte) + " " + (byte)encryptedByte+"\n");
+                System.out.println(bitString(encryptionResult) + " " + encryptionResult);
+                
                 out.write((int)encryptionResult);
                 
                 count++;
             }
-            System.out.println("\n\n"+count+" "+off);
+            System.out.println("\n"+count);
             //Close the input stream
             in.close();
             out.close();
