@@ -23,7 +23,7 @@ public class KeyFinder {
     int lfsrBits17;
     int carry = 0;
     
-    KeyFinder(String sourceFile)
+    KeyFinder(String sourceFile, boolean englishKey)
     {
         System.out.println("File: " + sourceFile);
         
@@ -35,10 +35,10 @@ public class KeyFinder {
         
         System.out.println("File header to search for: " + byteArrayString(header));
         
-        getKey(sourceFile, header);
+        getKey(sourceFile, header, englishKey);
     }
     
-    private byte[] getKey(String sourceFile, byte[] header)
+    private byte[] getKey(String sourceFile, byte[] header, boolean englishKey)
     {
         byte[] key = null;
         
@@ -51,57 +51,78 @@ public class KeyFinder {
             BufferedReader br = new BufferedReader(new InputStreamReader(in));
             
             byte[] decryptedHeader = new byte[header.length];
+            byte[] encryptedHeader = new byte[header.length];
             byte b;
             int finalKey = 0;
             
             generateKeys();         
             //Testing code
-            bits24 = Integer.parseInt("011001010110000101110010", 2); //ear
-            bits16 = Integer.parseInt("0111010001101000", 2); //th
+            if(englishKey == false)
+            {
+                bits24 = 0;
+                bits16 = 0;
+            }
+            else
+            {
+                bits24 = Integer.parseInt("010000010100000101000001", 2); //AAA
+                bits16 = Integer.parseInt("0100000101000001", 2); //AA
+            }
             //bits24 = bits24 - 10;
+            bits25 = bits24 << 1 | 0x01;
+            bits17 = bits16 << 1 | 0x01;
+            System.out.println(bitString(bits17));
             System.out.println(">>"+charStringFromBits(bits24)+charStringFromBits(bits16));
+            
+            for(int i =0; i < header.length; i++)
+            {
+                if(in.available() != 0)
+                {
+                    encryptedHeader[i] = in.readByte();
+                }
+            }
             
             boolean found = false;
             do
             {
+                carry = 0;
                 lfsrBits25 = bits25;
                 lfsrBits17 = bits17;
                 //Read File character By character
                 for (int i = 0; i < header.length; i++)   {
-                    if(in.available() != 0)
+                    finalKey = bit8adder(LFSR17(), LFSR25());
+                    decryptedHeader[i] = (byte) (encryptedHeader[i] ^ finalKey);
+
+                    if(decryptedHeader[i] != header[i])
                     {
-                        b = in.readByte();
-                        finalKey = bit8adder(LFSR17(), LFSR25());
-                        decryptedHeader[i] = (byte) (b ^ finalKey);
-                        
-                        if(decryptedHeader[i] != header[i])
-                        {
-                            System.out.println("Header check: " + decryptedHeader[i] + " " + header[i]);
-                            break;
-                        }
-                        else if(i == header.length - 1)
-                        {
-                            found = true;
-                        }
+                        //System.out.println("Header check: " + decryptedHeader[i] + " " + header[i]);
+                        break;
+                    }
+                    else if(i == header.length - 1)
+                    {
+                        found = true;
                     }
                 }
                 if(found == true)
                 {
                     break;
                 }
-                
-                incrementKeys();
+                if(englishKey == true)
+                {
+                    incrementEnglishKeys();
+                }
+                else
+                {
+                    incrementKeys();  
+                }
             } while (bits25 < 33554431);
             if(found)
             {
                 System.out.println("Found!");
-                System.out.println(bitString(bits17));
-                System.out.println(bitString(bits25));
-                System.out.println();
-                System.out.println(charStringFromBits(bits17 >> 1));
-                System.out.println(charStringFromBits(bits25 >> 1));
+                System.out.println("bits16: " + bitString(bits16));
+                System.out.println("bits24: " + bitString(bits24));
+                System.out.println("key: " + charStringFromBits(bits24)+charStringFromBits(bits16));
             }
-            System.out.println(byteArrayString(decryptedHeader));
+            //System.out.println(byteArrayString(decryptedHeader));
 
         }
         catch (Exception e){//Catch exception if any
@@ -194,12 +215,24 @@ public class KeyFinder {
             bits24 = bits24 + 1;
             //System.out.println(bitString(bits24) + " - " + bitString(bits16));
         }
-        
         bits17 = bits16 << 1 | 0x01;
         bits25 = bits24 << 1 | 0x01;
         System.out.println(charStringFromBits(bits24)+charStringFromBits(bits16));
         //System.out.println(bitString(bits24) + " - " + bitString(bits16));
         //System.out.println(bitString(bits25) + " + " + bitString(bits17));
+    }
+    
+    void incrementEnglishKeys()
+    {
+        bits16 = bits16 + 1;
+        if(bits16 % 256 == 91)
+        {
+            bits16 = bits16 + 230;
+        }
+        
+        bits17 = bits16 << 1 | 0x01;
+        bits25 = bits24 << 1 | 0x01;
+        System.out.println(charStringFromBits(bits24)+charStringFromBits(bits16));
     }
     
     private int LFSR17()
