@@ -108,7 +108,14 @@ public class KeyFinder {
                 }
                 if(englishKey == true)
                 {
-                    incrementEnglishKeys();
+                    if(bits24 == 8026746 && bits16 == 31354)
+                    {
+                        bits25 = 33554432;
+                    }
+                    else
+                    {
+                        incrementEnglishKeys();
+                    }
                 }
                 else
                 {
@@ -225,14 +232,49 @@ public class KeyFinder {
     void incrementEnglishKeys()
     {
         bits16 = bits16 + 1;
-        if(bits16 % 256 == 91)
+        if(bits16 == 31355) //23131 = 1 more than ZZ
         {
-            bits16 = bits16 + 230;
+            bits16 = 16705; //AA
+            bits24 = bits24 + 1;
+            
+            if(bits24 % 65536 == 23163)
+            {
+                bits24 = bits24 + 1734;
+            }
+            else if(bits24 % 65536 == 31355)
+            {
+                bits24 = bits24 + (65534 - (57 << 8) - 56);
+                
+                if((bits24 - bits24%64434 - bits24%256) >> 16 == 90)
+                {
+                    bits24 = bits24 + 65534 * 6 + 12;
+                }
+            }//4291194
+            else if(bits24 % 256 == 91)
+            {
+                bits24 = bits24 + 6;
+            }
+            else if(bits24 % 256 == 123)
+            {
+                bits24 = bits24 + 198;
+            }
+        }
+        else if(bits16 == 23163)
+        {
+            bits16 = 24897;
+        }
+        else if(bits16 % 256 == 91)
+        {
+            bits16 = bits16 + 6;
+        }
+        else if(bits16 % 256 == 123)
+        {
+            bits16 = bits16 + 198;
         }
         
         bits17 = bits16 << 1 | 0x01;
         bits25 = bits24 << 1 | 0x01;
-        System.out.println(charStringFromBits(bits24)+charStringFromBits(bits16));
+        //System.out.println(charStringFromBits(bits24)+charStringFromBits(bits16) + " " + bits16);
     }
     
     private int LFSR17()
