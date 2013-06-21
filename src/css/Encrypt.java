@@ -91,7 +91,7 @@ public class Encrypt {
             notification = notification + "17 bit key: " + bitString(bits17) + "\n";
             notification = notification + "File size: " + count + " bytes\n";
             notification = notification + "Execution time: " + ((endTime - startTime)/ 1000000000.0) + " seconds\n";
-            
+            System.out.println("\n" + notification);
             nf.setNotification(notification);
             nf.setTitle("Notification");
         }
@@ -131,31 +131,6 @@ public class Encrypt {
         //System.out.println();
     }
     
-    /*
-     * This is old code for making sure my LFSR function worked...
-     * */
-    int LFSR(int bits)
-    {
-        System.out.println("LFSR:");
-        System.out.println(bitString(bits));
-        
-        int bitMask4 = 0x08;
-        int bitMask3 = 0x04;
-        
-        for(int i = 0; i < 8; i++)
-        {
-            int lfsr = (((bits & bitMask4) >> 3) ^ ((bits & bitMask3) >> 2) & 1);
-            bits = bits << 1 | lfsr;
-            if(bits > 16)
-            {
-                bits = bits - 16;
-            }
-            System.out.println(bitString(bits));
-        }
-        
-        return 0;
-    }
-    
     private int LFSR17()
     {
         //System.out.println("LFSR:");
@@ -182,7 +157,7 @@ public class Encrypt {
             //System.out.println(bitString(bits17));
         }
         
-        //System.out.println("\n"+bitString(keyStreamByte)+"\n");
+        //System.out.println(bitString(keyStreamByte));
         
         return keyStreamByte;
     }
@@ -225,13 +200,14 @@ public class Encrypt {
         //System.out.println("bit8adder: ");
         int sum = key17 + key25 + carry;
         //System.out.println(key17 + " + " + key25 + " = " + sum);
-        if(sum > 256)
+        if(sum > 255)
         {
             carry = 1;
             return sum % 256;
         }
         else
         {
+            carry = 0;
             return sum;
         }
     }

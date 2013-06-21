@@ -15,8 +15,12 @@ import java.io.InputStreamReader;
  */
 public class KeyFinder {
     
+    int bits24=0;
+    int bits16=0;
     int bits25=0;
     int bits17=0;
+    int lfsrBits25;
+    int lfsrBits17;
     int carry = 0;
     
     KeyFinder(String sourceFile)
@@ -50,15 +54,52 @@ public class KeyFinder {
             byte b;
             int finalKey = 0;
             
-            generateKeys((int)1);
-            //Read File character By character
-            for (int i = 0; i < header.length; i++)   {
-                if(in.available() != 0)
-                {
-                    b = in.readByte();
-                    finalKey = bit8adder(LFSR17(), LFSR25());
-                    decryptedHeader[i] = (byte) (b ^ finalKey);
+            generateKeys();         
+            //Testing code
+            bits24 = Integer.parseInt("011001010110000101110010", 2); //ear
+            bits16 = Integer.parseInt("0111010001101000", 2); //th
+            //bits24 = bits24 - 10;
+            System.out.println(">>"+charStringFromBits(bits24)+charStringFromBits(bits16));
+            
+            boolean found = false;
+            do
+            {
+                lfsrBits25 = bits25;
+                lfsrBits17 = bits17;
+                //Read File character By character
+                for (int i = 0; i < header.length; i++)   {
+                    if(in.available() != 0)
+                    {
+                        b = in.readByte();
+                        finalKey = bit8adder(LFSR17(), LFSR25());
+                        decryptedHeader[i] = (byte) (b ^ finalKey);
+                        
+                        if(decryptedHeader[i] != header[i])
+                        {
+                            System.out.println("Header check: " + decryptedHeader[i] + " " + header[i]);
+                            break;
+                        }
+                        else if(i == header.length - 1)
+                        {
+                            found = true;
+                        }
+                    }
                 }
+                if(found == true)
+                {
+                    break;
+                }
+                
+                incrementKeys();
+            } while (bits25 < 33554431);
+            if(found)
+            {
+                System.out.println("Found!");
+                System.out.println(bitString(bits17));
+                System.out.println(bitString(bits25));
+                System.out.println();
+                System.out.println(charStringFromBits(bits17 >> 1));
+                System.out.println(charStringFromBits(bits25 >> 1));
             }
             System.out.println(byteArrayString(decryptedHeader));
 
@@ -75,12 +116,28 @@ public class KeyFinder {
     {
         byte[] header = null;
         
-        if(extension.equals("txt"))
+        if(extension.equalsIgnoreCase("txt"))
         {
         }
-        else if(extension.equals("png"))
+        else if(extension.equalsIgnoreCase("png"))
         {
             header = hexStringToByteArray("89504E470D0A1A0A");
+        }
+        else if(extension.equalsIgnoreCase("gif"))
+        {
+            header = hexStringToByteArray("474946383761474946383961");
+        }
+        else if(extension.equalsIgnoreCase("tif") || extension.equalsIgnoreCase("tiff"))
+        {
+            header = hexStringToByteArray("49492A004D4D002A");
+        }
+        else if(extension.equalsIgnoreCase("pdf"))
+        {
+            header = hexStringToByteArray("25504446");
+        }
+        else if(extension.equalsIgnoreCase("jpg") || extension.equalsIgnoreCase("jpeg"))
+        {
+            header = hexStringToByteArray("FFD8FFE0"); //Header is longer, but it has variable values. Not sure how to handle values that change
         }
         
         return header;
@@ -109,22 +166,40 @@ public class KeyFinder {
     }
     
     //Methods from encryption process used to find keys
-    //THIS NEEDS TO BE CHANGED...
-    void generateKeys(int key)
+    void generateKeys()
     {
         
         int bitMaskAll = 0xFF;
         
-        bits25 = (int) (key % Math.pow(2, 25));
-        bits17 = key >> 25;
+        bits24 = 0;
+        bits16 = 0;
+        bits25 = bits24 << 1 | 0x01;
+        bits17 = bits16 << 1 | 0x01;
         
-        bits25 = bits25 << 1 | 0x01;
-        bits17 = bits17 << 1 | 0x01;
+        //bits25 = bits25 << 1 | 0x01;
+        //bits17 = bits17 << 1 | 0x01;
         
         System.out.println("25 bit key: " + bitString(bits25));
         System.out.println("17 bit key: " + bitString(bits17));
         
         System.out.println();
+    }
+    
+    void incrementKeys()
+    {
+        bits16 = bits16 + 1;
+        if(bits16 > 65535)
+        {
+            bits16 = 0;
+            bits24 = bits24 + 1;
+            //System.out.println(bitString(bits24) + " - " + bitString(bits16));
+        }
+        
+        bits17 = bits16 << 1 | 0x01;
+        bits25 = bits24 << 1 | 0x01;
+        System.out.println(charStringFromBits(bits24)+charStringFromBits(bits16));
+        //System.out.println(bitString(bits24) + " - " + bitString(bits16));
+        //System.out.println(bitString(bits25) + " + " + bitString(bits17));
     }
     
     private int LFSR17()
@@ -153,7 +228,7 @@ public class KeyFinder {
             //System.out.println(bitString(bits17));
         }
         
-        //System.out.println("\n"+bitString(keyStreamByte)+"\n");
+        //System.out.println(bitString(keyStreamByte));
         
         return keyStreamByte;
     }
@@ -196,13 +271,14 @@ public class KeyFinder {
         //System.out.println("bit8adder: ");
         int sum = key17 + key25 + carry;
         //System.out.println(key17 + " + " + key25 + " = " + sum);
-        if(sum > 256)
+        if(sum > 255)
         {
             carry = 1;
             return sum % 256;
         }
         else
         {
+            carry = 0;
             return sum;
         }
     }
@@ -221,5 +297,20 @@ public class KeyFinder {
         {
             return String.format("%17s",Integer.toBinaryString(bits)).replace(' ','0');
         }
+    }
+    
+    static String charStringFromBits(int bits)
+    {
+        String charString = "";
+        //System.out.println(bitString(bits));
+        while(bits > 0)
+        {
+            //System.out.print(bits % 256);
+            //System.out.println(" - " + (char)(bits % 256));
+            charString = charString + (char)(bits % 256);
+            bits = bits >> 8;
+        }
+        
+        return new StringBuilder(charString).reverse().toString();
     }
 }
