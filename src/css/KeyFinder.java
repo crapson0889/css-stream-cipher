@@ -4,6 +4,7 @@
  */
 package css;
 
+import static css.Encrypt.bitString;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.FileInputStream;
@@ -23,6 +24,8 @@ public class KeyFinder {
     int lfsrBits17;
     int carry = 0;
     
+    NotificationFrame nf = new NotificationFrame();
+    
     KeyFinder(String sourceFile, boolean englishKey)
     {
         System.out.println("File: " + sourceFile);
@@ -40,101 +43,122 @@ public class KeyFinder {
     
     private byte[] getKey(String sourceFile, byte[] header, boolean englishKey)
     {
+        long startTime = System.nanoTime();
         byte[] key = null;
         
-        try{
-            // Open the file that is the first 
-            // command line parameter
-            FileInputStream fstream = new FileInputStream(sourceFile);
-            // Get the object of DataInputStream
-            DataInputStream in = new DataInputStream(fstream);
-            BufferedReader br = new BufferedReader(new InputStreamReader(in));
-            
-            byte[] decryptedHeader = new byte[header.length];
-            byte[] encryptedHeader = new byte[header.length];
-            byte b;
-            int finalKey = 0;
-            
-            generateKeys();         
-            //Testing code
-            if(englishKey == false)
-            {
-                bits24 = 0;
-                bits16 = 0;
-            }
-            else
-            {
-                bits24 = Integer.parseInt("010000010100000101000001", 2); //AAA
-                bits16 = Integer.parseInt("0100000101000001", 2); //AA
-            }
-            //bits24 = bits24 - 10;
-            bits25 = bits24 << 1 | 0x01;
-            bits17 = bits16 << 1 | 0x01;
-            System.out.println(bitString(bits17));
-            System.out.println(">>"+charStringFromBits(bits24)+charStringFromBits(bits16));
-            
-            for(int i =0; i < header.length; i++)
-            {
-                if(in.available() != 0)
-                {
-                    encryptedHeader[i] = in.readByte();
-                }
-            }
-            
-            boolean found = false;
-            do
-            {
-                carry = 0;
-                lfsrBits25 = bits25;
-                lfsrBits17 = bits17;
-                //Read File character By character
-                for (int i = 0; i < header.length; i++)   {
-                    finalKey = bit8adder(LFSR17(), LFSR25());
-                    decryptedHeader[i] = (byte) (encryptedHeader[i] ^ finalKey);
+        if(header.length != 0)
+        {
+            try{
+                // Open the file that is the first 
+                // command line parameter
+                FileInputStream fstream = new FileInputStream(sourceFile);
+                // Get the object of DataInputStream
+                DataInputStream in = new DataInputStream(fstream);
+                BufferedReader br = new BufferedReader(new InputStreamReader(in));
 
-                    if(decryptedHeader[i] != header[i])
-                    {
-                        //System.out.println("Header check: " + decryptedHeader[i] + " " + header[i]);
-                        break;
-                    }
-                    else if(i == header.length - 1)
-                    {
-                        found = true;
-                    }
-                }
-                if(found == true)
+                byte[] decryptedHeader = new byte[header.length];
+                byte[] encryptedHeader = new byte[header.length];
+                byte b;
+                int finalKey = 0;
+
+                generateKeys();         
+                //Testing code
+                if(englishKey == false)
                 {
-                    break;
-                }
-                if(englishKey == true)
-                {
-                    if(bits24 == 8026746 && bits16 == 31354)
-                    {
-                        bits25 = 33554432;
-                    }
-                    else
-                    {
-                        incrementEnglishKeys();
-                    }
+                    bits24 = 0;
+                    bits16 = 0;
                 }
                 else
                 {
-                    incrementKeys();  
+                    bits24 = Integer.parseInt("010000010100000101000001", 2); //AAA
+                    bits16 = Integer.parseInt("0100000101000001", 2); //AA
                 }
-            } while (bits25 < 33554431);
-            if(found)
-            {
-                System.out.println("Found!");
-                System.out.println("bits16: " + bitString(bits16));
-                System.out.println("bits24: " + bitString(bits24));
-                System.out.println("key: " + charStringFromBits(bits24)+charStringFromBits(bits16));
-            }
-            //System.out.println(byteArrayString(decryptedHeader));
+                //bits24 = bits24 - 10;
+                bits25 = bits24 << 1 | 0x01;
+                bits17 = bits16 << 1 | 0x01;
+                System.out.println(bitString(bits17));
+                System.out.println(">>"+charStringFromBits(bits24)+charStringFromBits(bits16));
 
+                for(int i =0; i < header.length; i++)
+                {
+                    if(in.available() != 0)
+                    {
+                        encryptedHeader[i] = in.readByte();
+                    }
+                }
+
+                boolean found = false;
+                do
+                {
+                    carry = 0;
+                    lfsrBits25 = bits25;
+                    lfsrBits17 = bits17;
+                    //Read File character By character
+                    for (int i = 0; i < header.length; i++)   {
+                        finalKey = bit8adder(LFSR17(), LFSR25());
+                        decryptedHeader[i] = (byte) (encryptedHeader[i] ^ finalKey);
+
+                        if(decryptedHeader[i] != header[i])
+                        {
+                            //System.out.println("Header check: " + decryptedHeader[i] + " " + header[i]);
+                            break;
+                        }
+                        else if(i == header.length - 1)
+                        {
+                            found = true;
+                        }
+                    }
+                    if(found == true)
+                    {
+                        break;
+                    }
+                    if(englishKey == true)
+                    {
+                        if(bits24 == 8026746 && bits16 == 31354)
+                        {
+                            bits25 = 33554432;
+                        }
+                        else
+                        {
+                            incrementEnglishKeys();
+                        }
+                    }
+                    else
+                    {
+                        incrementKeys();  
+                    }
+                } while (bits25 < 33554431);
+                long endTime = System.nanoTime();
+                if(found)
+                {
+                    String notification = "Completed\nFound key for encrypted file: " + sourceFile + "\n";
+                    notification = notification + "Key: " + charStringFromBits(bits24)+charStringFromBits(bits16) + "\n";
+                    notification = notification + "bits16: " + bitString(bits16) + "\n";
+                    notification = notification + "bits24: " + bitString(bits24) + "\n";     
+                    notification = notification + "Execution time: " + ((endTime - startTime)/ 1000000000.0) + " seconds\n";
+                    System.out.println("\n" + notification);
+                    nf.setNotification(notification);
+                    nf.setTitle("Notification");
+                }
+                else
+                {
+                    String notification = "Key not found";
+                    nf.setNotification(notification);
+                    nf.setTitle("Notification");
+                }
+                //System.out.println(byteArrayString(decryptedHeader));
+
+            }
+            catch (Exception e){//Catch exception if any
+                System.err.println("Error: " + e);
+                System.err.println("Error: " + e.getMessage());
+            }
         }
-        catch (Exception e){//Catch exception if any
-            System.err.println("Error: " + e);
-            System.err.println("Error: " + e.getMessage());
+        else
+        {
+           String notification = "File type not supported";
+           nf.setNotification(notification);
+           nf.setTitle("Notification"); 
         }
         
         return key;
@@ -146,6 +170,7 @@ public class KeyFinder {
         
         if(extension.equalsIgnoreCase("txt"))
         {
+            header = hexStringToByteArray("");
         }
         else if(extension.equalsIgnoreCase("png"))
         {
@@ -224,7 +249,7 @@ public class KeyFinder {
         }
         bits17 = bits16 << 1 | 0x01;
         bits25 = bits24 << 1 | 0x01;
-        System.out.println(charStringFromBits(bits24)+charStringFromBits(bits16));
+        //System.out.println(charStringFromBits(bits24)+charStringFromBits(bits16));
         //System.out.println(bitString(bits24) + " - " + bitString(bits16));
         //System.out.println(bitString(bits25) + " + " + bitString(bits17));
     }
