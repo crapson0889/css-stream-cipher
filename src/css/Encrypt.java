@@ -125,8 +125,8 @@ public class Encrypt {
         bits25 = bits25 << 1 | 0x01;
         bits17 = bits17 << 1 | 0x01;
         
-        //System.out.println(bitString(bits25));
-        //System.out.println(bitString(bits17));
+        //System.out.println("bits25: " + bitString(bits25));
+        System.out.println("bits17: " + bitString(bits17));
         
         //System.out.println();
     }
@@ -144,10 +144,11 @@ public class Encrypt {
         for(int i = 0; i < 8; i++)
         {
             int lfsr = (((bits17 & bitMask17) >> 16) ^ ((bits17 & bitMask2) >> 1) & 1);
-            bits17 = bits17 << 1 | lfsr;
-            if(bits17 > 131072)
+            //System.out.println(lfsr << 17);
+            bits17 = bits17 >> 1 | (lfsr << 16);
+            if(bits17 % 2 == 1)
             {
-                bits17 = bits17 - 131072;
+                //bits17 = bits17 - 131072;
                 keyStreamByte = keyStreamByte << 1 | 0x01;
             }
             else
@@ -177,10 +178,10 @@ public class Encrypt {
         for(int i = 0; i < 8; i++)
         {
             int lfsr = (((bits25 & bitMask25) >> 24) ^ ((bits25 & bitMask21) >> 20) ^ ((bits25 & bitMask20) >> 19) ^ ((bits25 & bitMask10) >> 9) & 1);
-            bits25 = bits25 << 1 | lfsr;
-            if(bits25 > 33554432)
+            bits25 = bits25 >> 1 | (lfsr << 24);
+            if(bits25 % 2 == 1)
             {
-                bits25 = bits25 - 33554432;
+                //bits25 = bits25 - 33554432;
                 keyStreamByte = keyStreamByte << 1 | 0x01;
             }
             else
@@ -200,7 +201,7 @@ public class Encrypt {
         //System.out.println("bit8adder: ");
         int sum = key17 + key25 + carry;
         //System.out.println(key17 + " + " + key25 + " = " + sum);
-        if(sum > 255)
+        if(sum >= 256)
         {
             carry = 1;
             return sum % 256;

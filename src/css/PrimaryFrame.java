@@ -112,7 +112,7 @@ public class PrimaryFrame extends javax.swing.JFrame {
 
         jLabel4.setText("File to Search");
 
-        jButton2.setText("Go!");
+        jButton2.setText("Search all Keys");
         jButton2.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButton2ActionPerformed(evt);

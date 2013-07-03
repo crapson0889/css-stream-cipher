@@ -315,10 +315,11 @@ public class KeyFinder {
         for(int i = 0; i < 8; i++)
         {
             int lfsr = (((bits17 & bitMask17) >> 16) ^ ((bits17 & bitMask2) >> 1) & 1);
-            bits17 = bits17 << 1 | lfsr;
-            if(bits17 > 131072)
+            //System.out.println(lfsr << 17);
+            bits17 = bits17 >> 1 | (lfsr << 16);
+            if(bits17 % 2 == 1)
             {
-                bits17 = bits17 - 131072;
+                //bits17 = bits17 - 131072;
                 keyStreamByte = keyStreamByte << 1 | 0x01;
             }
             else
@@ -348,10 +349,10 @@ public class KeyFinder {
         for(int i = 0; i < 8; i++)
         {
             int lfsr = (((bits25 & bitMask25) >> 24) ^ ((bits25 & bitMask21) >> 20) ^ ((bits25 & bitMask20) >> 19) ^ ((bits25 & bitMask10) >> 9) & 1);
-            bits25 = bits25 << 1 | lfsr;
-            if(bits25 > 33554432)
+            bits25 = bits25 >> 1 | (lfsr << 24);
+            if(bits25 % 2 == 1)
             {
-                bits25 = bits25 - 33554432;
+                //bits25 = bits25 - 33554432;
                 keyStreamByte = keyStreamByte << 1 | 0x01;
             }
             else
